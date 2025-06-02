@@ -3,7 +3,7 @@
 🚀 **Interactive web-based media planning tool** that models advertising scenarios across multiple DMAs and channels with enhanced functionality and professional UI.
 
 ## 🌟 Live Demo
-**[Access the Scenario Planner v2.0](https://BigeyeAgency.github.io/sears-scenario-planner-v2/)**
+**[Access the Scenario Planner v2.0](https://BigeyeAgency.github.io/appliance-repair-scenario-planner-web-version2/)**
 
 ## ✨ Key Features
 
@@ -64,15 +64,15 @@
 ## 🚀 Quick Start
 
 ### Online Access
-Simply visit: **[https://BigeyeAgency.github.io/sears-scenario-planner-v2/](https://BigeyeAgency.github.io/sears-scenario-planner-v2/)**
+Simply visit: **[https://BigeyeAgency.github.io/appliance-repair-scenario-planner-web-version2/](https://BigeyeAgency.github.io/appliance-repair-scenario-planner-web-version2/)**
 
 ### Local Development
 ```bash
 # Clone the repository
-git clone https://github.com/BigeyeAgency/sears-scenario-planner-v2.git
+git clone https://github.com/BigeyeAgency/appliance-repair-scenario-planner-web-version2.git
 
 # Navigate to directory  
-cd sears-scenario-planner-v2
+cd appliance-repair-scenario-planner-web-version2
 
 # Serve locally (Python 3)
 python -m http.server 8000
