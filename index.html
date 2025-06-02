@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sears Home Services - Scenario Planner v2.0</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .metric-card { background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%); }
+        .channel-badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+        .spanish-indicator { background: linear-gradient(90deg, #f59e0b, #d97706); color: white; }
+        .english-indicator { background: linear-gradient(90deg, #3b82f6, #1d4ed8); color: white; }
+        .capacity-warning { background: linear-gradient(90deg, #ef4444, #dc2626); color: white; }
+        .capacity-ok { background: linear-gradient(90deg, #10b981, #059669); color: white; }
+        .roi-excellent { color: #059669; font-weight: 700; }
+        .roi-good { color: #0891b2; font-weight: 600; }
+        .roi-poor { color: #dc2626; font-weight: 600; }
+        .scenario-header { background: linear-gradient(90deg, #1f2937, #374151); color: white; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        .slide-in { animation: slideIn 0.5s ease-out; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+        // Simple SVG Icons
+        const DownloadIcon = () => (
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+        );
+
+        const CalculatorIcon = () => (
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect width="16" height="20" x="4" y="2" rx="2" />
+                <line x1="8" x2="16" y1="6" y2="6" />
+                <line x1="8" x2="16" y1="10" y2="10" />
+                <line x1="8" x2="16" y1="14" y2="14" />
+                <line x1="8" x2="16" y1="18" y2="18" />
+            </svg>
+        );
+
+        const SettingsIcon = () => (
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        );
+
+        const ChartIcon = () => (
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+        );
+
+        const TableIcon = () => (
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h16a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1v-8z" />
+            </svg>
+        );
+
+        const TrendingUpIcon = () => (
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+        );
+
+        const ScenariosPlanner = () => {
+          const [dmaData, setDmaData] = useState([
+            { DMA: "Orlando", Spanish: 0.23, Spend: 100000, Book: 0.25, Ticket: 171, CPL_Uplift: 1.00 },
+            { DMA: "Miami/Ft. Lauderdale", Spanish: 0.68, Spend: 150000, Book: 0.22, Ticket: 187, CPL_Uplift: 1.10 },
+            { DMA: "Jacksonville", Spanish: 0.09, Spend: 80000, Book: 0.28, Ticket: 165, CPL_Uplift: 1.00 },
+            { DMA: "Atlanta", Spanish: 0.15, Spend: 180000, Book: 0.27, Ticket: 181, CPL_Uplift: 1.05 }
+          ]);
+
+          const [config, setConfig] = useState({
+            addCoupon: true,
+            priceSensitiveDMAs: ["Orlando", "Jacksonville"],
+            completion: 0.80,
+            margin: 0.30,
+            measPct: 0.04
+          });
+
+          const [channels] = useState({
+            "LSA": { type: "CPL", cost: 35, ctr: null, c2l: null },
+            "Search": { type: "CPL", cost: 82, ctr: null, c2l: null },
+            "Meta": { type: "CPM", cost: 7.5, ctr: 0.010, c2l: 0.06 },
+            "CTV": { type: "CPM", cost: 25, ctr: null, c2l: null },
+            "pDOOH": { type: "CPM", cost: 7.2, ctr: null, c2l: null },
+            "Static_OOH": { type: "CPM", cost: 7.0, ctr: null, c2l: null }
+          });
+
+          const [mediaMix] = useState({
+            "Balanced_new": {
+              "LSA": 0.28, "Search": 0.25, "Meta": 0.25, "CTV": 0.15, "pDOOH": 0.05, "Static_OOH": 0.02
+            },
+            "Digital_Heavy": {
+              "LSA": 0.25, "Search": 0.30, "Meta": 0.35, "CTV": 0.08, "pDOOH": 0.01, "Static_OOH": 0.01
+            },
+            "Traditional_Focus": {
+              "LSA": 0.30, "Search": 0.20, "Meta": 0.15, "CTV": 0.25, "pDOOH": 0.07, "Static_OOH": 0.03
+            }
+          });
+
+          const [sensitivity] = useState({ "Low": 0.8, "Base": 1.0, "High": 1.2 });
+          const [langSplit] = useState(["Meta", "CTV"]);
+          const [techs] = useState({
+            "Orlando": 45, "Miami/Ft. Lauderdale": 110, "Jacksonville": 35, "Atlanta": 120
+          });
+          const [calls] = useState(6);
+          const [comp] = useState({
+            "Orlando": 95000, "Miami/Ft. Lauderdale": 180000, "Jacksonville": 60000, "Atlanta": 190000
+          });
+
+          const [results, setResults] = useState({ detail: [], pivot: [] });
+          const [activeTab, setActiveTab] = useState('inputs');
+          const [activeMix, setActiveMix] = useState('Balanced_new');
+          const [isCalculating, setIsCalculating] = useState(false);
+          const [lastCalculated, setLastCalculated] = useState(null);
+
+          // Formatting functions
+          const formatCurrency = (value) => {
+            if (value == null || isNaN(value)) return "$0";
+            return new Intl.NumberFormat('en-US', {
+              style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0
+            }).format(value);
+          };
+
+          const formatNumber = (value, decimals = 0) => {
+            if (value == null || isNaN(value)) return "0";
+            return new Intl.NumberFormat('en-US', {
+              minimumFractionDigits: decimals, maximumFractionDigits: decimals
+            }).format(value);
+          };
+
+          const formatPercent = (value) => {
+            if (value == null || isNaN(value)) return "0.0%";
+            return new Intl.NumberFormat('en-US', {
+              style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1
+            }).format(value);
+          };
+
+          const getROIClass = (roi) => {
+            if (roi >= 0.5) return 'roi-excellent';
+            if (roi >= 0.3) return 'roi-good';
+            return 'roi-poor';
+          };
+
+          const getChannelBadgeClass = (channel) => {
+            if (channel.includes('_ES')) return 'spanish-indicator';
+            if (channel.includes('_EN')) return 'english-indicator';
+            return 'bg-gray-100 text-gray-800';
+          };
+
+          // Enhanced calculation engine
+          const buildRows = (row, mix, sens) => {
+            const mult = sensitivity[sens];
+            const book = row.Book + (config.addCoupon && config.priceSensitiveDMAs.includes(row.DMA) ? 0.03 : 0);
+            const meas = row.Spend * config.measPct;
+            const pool = row.Spend - meas;
+            const out = [[sens, mix, row.DMA, "Measurement", meas, 0, 0, 0, -meas]];
+
+            Object.entries(mediaMix[mix]).forEach(([ch, shr]) => {
+              const base = pool * shr;
+              const langs = !langSplit.includes(ch) ? [["", 1]] : [["_EN", 1 - row.Spanish], ["_ES", row.Spanish]];
+              
+              langs.forEach(([suf, p]) => {
+                if (p === 0) return;
+                const spend = base * p;
+                const channel = channels[ch];
+                let cost = channel.cost;
+                
+                if (channel.type === "CPL") cost = cost * row.CPL_Uplift;
+                cost = cost * mult;
+
+                let leads;
+                if (channel.type === "CPL") {
+                  leads = spend / cost;
+                } else {
+                  const imps = (spend / cost) * 1000;
+                  if (ch === "CTV") leads = imps * 0.01 * mult;
+                  else if (["pDOOH", "Static_OOH"].includes(ch)) leads = imps * 0.0003;
+                  else leads = imps * channel.ctr * channel.c2l * mult;
+                }
+
+                const creates = leads * book;
+                const done = creates * config.completion;
+                const profit = done * row.Ticket * mult * config.margin;
+                
+                out.push([sens, mix, row.DMA, ch + suf, spend, leads, creates, done, profit]);
+              });
+            });
+            return out;
+          };
+
+          const calculateScenarios = () => {
+            setIsCalculating(true);
+            setTimeout(() => {
+              const rows = [];
+              Object.keys(sensitivity).forEach(sens => {
+                Object.keys(mediaMix).forEach(mix => {
+                  dmaData.forEach(row => {
+                    rows.push(...buildRows(row, mix, sens));
+                  });
+                });
+              });
+
+              const detail = rows.map(row => ({
+                Sens: row[0], Mix: row[1], DMA: row[2], Channel: row[3], Spend: row[4], Leads: row[5],
+                Creates: row[6], Repairs: row[7], Profit: row[8],
+                JobsPerDay: row[7] / 90, CapFlag: (row[7] / 90) > (techs[row[2]] * calls),
+                CompSpend: comp[row[2]], LeadCost: row[4] / (row[5] || 1),
+                ConversionRate: row[6] / (row[5] || 1), ROI: row[8] / (row[4] || 1),
+                LanguageTarget: row[3].includes('_ES') ? 'Spanish' : row[3].includes('_EN') ? 'English' : 'General'
+              }));
+
+              const pivotMap = new Map();
+              detail.forEach(row => {
+                const key = `${row.Sens}-${row.Mix}-${row.DMA}`;
+                if (!pivotMap.has(key)) {
+                  pivotMap.set(key, {
+                    Sens: row.Sens, Mix: row.Mix, DMA: row.DMA, Spend: 0, Leads: 0,
+                    Creates: 0, Repairs: 0, Profit: 0, CapIssue: false, CompSpend: row.CompSpend
+                  });
+                }
+                const pivot = pivotMap.get(key);
+                pivot.Spend += row.Spend; pivot.Leads += row.Leads; pivot.Creates += row.Creates;
+                pivot.Repairs += row.Repairs; pivot.Profit += row.Profit;
+                pivot.CapIssue = pivot.CapIssue || row.CapFlag;
+              });
+
+              const pivot = Array.from(pivotMap.values()).map(row => ({
+                ...row, ROI: row.Profit / (row.Spend || 1), CostPerLead: row.Spend / (row.Leads || 1),
+                MarketShare: row.Spend / (row.Spend + row.CompSpend), JobsPerDay: row.Repairs / 90
+              }));
+              
+              setResults({ detail, pivot });
+              setIsCalculating(false);
+              setActiveTab('results');
+              setLastCalculated(new Date());
+            }, 1000);
+          };
+
+          const exportToCSV = (data, filename) => {
+            if (!data.length) return;
+            const headers = Object.keys(data[0]);
+            const csvContent = [headers.join(','), ...data.map(row => headers.map(h => row[h]).join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url; link.download = filename; link.click();
+            window.URL.revokeObjectURL(url);
+          };
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+              {/* Header */}
+              <div className="gradient-bg shadow-xl">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex justify-between items-center py-8">
+                    <div className="text-white">
+                      <h1 className="text-4xl font-bold tracking-tight">Sears Home Services</h1>
+                      <p className="text-xl text-blue-100 mt-2">Advanced Scenario Planner v2.0</p>
+                      <p className="text-sm text-blue-200 mt-1">Interactive Media Planning & ROI Analysis Tool</p>
+                    </div>
+                    <div className="flex flex-col items-end space-y-3">
+                      <button
+                        onClick={calculateScenarios}
+                        disabled={isCalculating}
+                        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transition-all duration-200"
+                      >
+                        {isCalculating ? (
+                          <>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700 mr-3"></div>
+                            <span>Calculating Scenarios...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CalculatorIcon />
+                            <span className="ml-2">Run All Scenarios</span>
+                          </>
+                        )}
+                      </button>
+                      {lastCalculated && (
+                        <p className="text-blue-200 text-sm">Last calculated: {lastCalculated.toLocaleTimeString()}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-6">
+                    <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 text-center">
+                      <p className="text-blue-100 text-sm">Total Budget</p>
+                      <p className="text-white text-xl font-bold">
+                        {formatCurrency(dmaData.reduce((sum, dma) => sum + dma.Spend, 0))}
+                      </p>
+                    </div>
+                    <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 text-center">
+                      <p className="text-blue-100 text-sm">DMAs</p>
+                      <p className="text-white text-xl font-bold">{dmaData.length}</p>
+                    </div>
+                    <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 text-center">
+                      <p className="text-blue-100 text-sm">Channels</p>
+                      <p className="text-white text-xl font-bold">{Object.keys(channels).length}</p>
+                    </div>
+                    <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 text-center">
+                      <p className="text-blue-100 text-sm">Mix Strategies</p>
+                      <p className="text-white text-xl font-bold">{Object.keys(mediaMix).length}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation */}
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="border-b border-gray-200 bg-white shadow-sm">
+                  <nav className="-mb-px flex space-x-8">
+                    {[
+                      { key: 'inputs', label: 'Configuration & Inputs', icon: SettingsIcon, description: 'Set up DMAs, budgets, and parameters' },
+                      { key: 'results', label: 'Executive Summary', icon: ChartIcon, description: 'Key metrics and ROI analysis' },
+                      { key: 'detail', label: 'Channel Analysis', icon: TableIcon, description: 'Detailed breakdown by channel' },
+                      { key: 'comparison', label: 'Strategy Comparison', icon: TrendingUpIcon, description: 'Compare mix strategies' }
+                    ].map(({ key, label, icon: Icon, description }) => (
+                      <button
+                        key={key}
+                        onClick={() => setActiveTab(key)}
+                        className={`group py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-all duration-200 ${
+                          activeTab === key
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        <Icon />
+                        <div className="ml-2 text-left">
+                          <div className="font-medium">{label}</div>
+                          <div className="text-xs text-gray-400 group-hover:text-gray-500">{description}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </nav>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {activeTab === 'inputs' && (
+                  <div className="space-y-8 slide-in">
+                    <div className="bg-white rounded-xl shadow-lg p-8 card-hover">
+                      <h2 className="text-2xl font-bold text-gray-900 mb-6">DMA Configuration</h2>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="scenario-header">
+                            <tr>
+                              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">DMA Market</th>
+                              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Spanish %</th>
+                              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">3-Month Budget</th>
+                              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Booking Rate</th>
+                              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Avg Ticket</th>
+                              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">CPL Uplift</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {dmaData.map((row, index) => (
+                              <tr key={index} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-bold text-gray-900">{row.DMA}</div>
+                                  <div className="text-xs text-gray-500">
+                                    {config.priceSensitiveDMAs.includes(row.DMA) ? 'Price Sensitive' : 'Standard'}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <input
+                                    type="number" step="0.01" min="0" max="1" value={row.Spanish}
+                                    onChange={(e) => {
+                                      const newData = [...dmaData];
+                                      newData[index].Spanish = parseFloat(e.target.value) || 0;
+                                      setDmaData(newData);
+                                    }}
+                                    className="w-20 px-3 py-2 text-sm border rounded-md"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <input
+                                    type="number" step="5000" min="0" value={row.Spend}
+                                    onChange={(e) => {
+                                      const newData = [...dmaData];
+                                      newData[index].Spend = parseInt(e.target.value) || 0;
+                                      setDmaData(newData);
+                                    }}
+                                    className="w-28 px-3 py-2 text-sm border rounded-md"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <input
+                                    type="number" step="0.01" min="0" max="1" value={row.Book}
+                                    onChange={(e) => {
+                                      const newData = [...dmaData];
+                                      newData[index].Book = parseFloat(e.target.value) || 0;
+                                      setDmaData(newData);
+                                    }}
+                                    className="w-20 px-3 py-2 text-sm border rounded-md"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <input
+                                    type="number" step="5" min="0" value={row.Ticket}
+                                    onChange={(e) => {
+                                      const newData = [...dmaData];
+                                      newData[index].Ticket = parseInt(e.target.value) || 0;
+                                      setDmaData(newData);
+                                    }}
+                                    className="w-20 px-3 py-2 text-sm border rounded-md"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <input
+                                    type="number" step="0.01" min="0" value={row.CPL_Uplift}
+                                    onChange={(e) => {
+                                      const newData = [...dmaData];
+                                      newData[index].CPL_Uplift = parseFloat(e.target.value) || 1;
+                                      setDmaData(newData);
+                                    }}
+                                    className="w-20 px-3 py-2 text-sm border rounded-md"
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-lg p-8 card-hover">
+                      <h2 className="text-2xl font-bold text-gray-900 mb-6">Configuration Settings</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <label className="flex items-center p-4 bg-blue-50 rounded-lg">
+                          <input
+                            type="checkbox" checked={config.addCoupon}
+                            onChange={(e) => setConfig({...config, addCoupon: e.target.checked})}
+                            className="mr-3"
+                          />
+                          <div>
+                            <div className="text-sm font-medium">Coupon Campaign</div>
+                            <div className="text-xs text-gray-600">+3% booking in price-sensitive markets</div>
+                          </div>
+                        </label>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Completion Rate</label>
+                          <input
+                            type="number" step="0.01" min="0" max="1" value={config.completion}
+                            onChange={(e) => setConfig({...config, completion: parseFloat(e.target.value) || 0})}
+                            className="w-full px-3 py-2 border rounded-md"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Margin</label>
+                          <input
+                            type="number" step="0.01" min="0" max="1" value={config.margin}
+                            onChange={(e) => setConfig({...config, margin: parseFloat(e.target.value) || 0})}
+                            className="w-full px-3 py-2 border rounded-md"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Measurement %</label>
+                          <input
+                            type="number" step="0.01" min="0" max="1" value={config.measPct}
+                            onChange={(e) => setConfig({...config, measPct: parseFloat(e.target.value) || 0})}
+                            className="w-full px-3 py-2 border rounded-md"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-lg p-8 card-hover">
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Media Mix Strategies</h2>
+                        <div className="flex space-x-2">
+                          {Object.keys(mediaMix).map(mix => (
+                            <button
+                              key={mix}
+                              onClick={() => setActiveMix(mix)}
+                              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                                activeMix === mix ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
+                              }`}
+                            >
+                              {mix.replace('_', ' ')}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+                        {Object.entries(mediaMix[activeMix]).map(([channel, share]) => (
+                          <div key={channel} className="text-center p-4 bg-blue-50 rounded-xl">
+                            <div className="text-sm font-medium text-gray-700 mb-1">{channel}</div>
+                            <div className="text-3xl font-bold text-blue-600 mb-2">{formatPercent(share)}</div>
+                            <div className="text-xs text-gray-500">
+                              {formatCurrency(dmaData.reduce((sum, dma) => sum + dma.Spend, 0) * share)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'results' && (
+                  <div className="space-y-8 slide-in">
+                    {results.pivot.length > 0 ? (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                          {(() => {
+                            const totals = results.pivot.reduce((acc, row) => {
+                              if (row.Sens === 'Base') {
+                                acc.spend += row.Spend; acc.profit += row.Profit;
+                                acc.repairs += row.Repairs; acc.leads += row.Leads;
+                              }
+                              return acc;
+                            }, { spend: 0, profit: 0, repairs: 0, leads: 0 });
+                            
+                            return [
+                              { label: 'Total Investment', value: formatCurrency(totals.spend), subtext: 'Base scenario', color: 'blue' },
+                              { label: 'Projected Profit', value: formatCurrency(totals.profit), subtext: `${formatPercent(totals.profit/totals.spend)} ROI`, color: 'green' },
+                              { label: 'Service Repairs', value: formatNumber(totals.repairs, 0), subtext: `${formatNumber(totals.repairs/90, 1)} per day`, color: 'purple' },
+                              { label: 'Generated Leads', value: formatNumber(totals.leads, 0), subtext: `${formatNumber(totals.spend/totals.leads, 0)} CPL`, color: 'indigo' }
+                            ].map((metric, index) => (
+                              <div key={index} className="metric-card rounded-xl p-6 border-l-4 border-blue-500 card-hover">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-600">{metric.label}</p>
+                                    <p className="text-2xl font-bold text-blue-600">{metric.value}</p>
+                                    <p className="text-xs text-gray-500 mt-1">{metric.subtext}</p>
+                                  </div>
+                                  <TrendingUpIcon />
+                                </div>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                          <h2 className="text-2xl font-bold text-gray-900">Scenario Performance Analysis</h2>
+                          <div className="flex space-x-3">
+                            <button
+                              onClick={() => exportToCSV(results.pivot, 'sears_executive_summary.csv')}
+                              className="inline-flex items-center px-4 py-2 border text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                            >
+                              <DownloadIcon />
+                              <span className="ml-2">Export Summary</span>
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white rounded-xl shadow-xl overflow-hidden">
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="scenario-header">
+                                <tr>
+                                  <th className="px-6 py-4 text-left text-xs font-bold uppercase">Scenario</th>
+                                  <th className="px-6 py-4 text-left text-xs font-bold uppercase">Strategy</th>
+                                  <th className="px-6 py-4 text-left text-xs font-bold uppercase">Market</th>
+                                  <th className="px-6 py-4 text-left text-xs font-bold uppercase">Investment</th>
+                                  <th className="px-6 py-4 text-left text-xs font-bold uppercase">Leads</th>
+                                  <th className="px-6 py-4 text-left text-xs font-bold uppercase">Repairs</th>
+                                  <th className="px-6 py-4 text-left text-xs font-bold uppercase">Profit</th>
+                                  <th className="px-6 py-4 text-left text-xs font-bold uppercase">ROI</th>
+                                  <th className="px-6 py-4 text-left text-xs font-bold uppercase">Capacity</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {results.pivot.map((row, index) => (
+                                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                        row.Sens === 'High' ? 'bg-green-100 text-green-800' :
+                                        row.Sens === 'Base' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-yellow-100 text-yellow-800'
+                                      }`}>
+                                        {row.Sens}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-medium">{row.Mix.replace('_', ' ')}</td>
+                                    <td className="px-6 py-4 text-sm">{row.DMA}</td>
+                                    <td className="px-6 py-4 text-sm font-bold">{formatCurrency(row.Spend)}</td>
+                                    <td className="px-6 py-4 text-sm">
+                                      <div>{formatNumber(row.Leads, 0)}</div>
+                                      <div className="text-xs text-gray-500">${formatNumber(row.CostPerLead, 0)} CPL</div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm">
+                                      <div>{formatNumber(row.Repairs, 0)}</div>
+                                      <div className="text-xs text-gray-500">{formatNumber(row.JobsPerDay, 1)}/day</div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-bold text-green-600">{formatCurrency(row.Profit)}</td>
+                                    <td className="px-6 py-4 text-sm">
+                                      <span className={getROIClass(row.ROI)}>{formatPercent(row.ROI)}</span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        row.CapIssue ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                      }`}>
+                                        {row.CapIssue ? 'Over Capacity' : 'OK'}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-16 bg-white rounded-xl shadow-lg">
+                        <CalculatorIcon />
+                        <h3 className="mt-4 text-xl font-medium text-gray-900">Ready to Analyze Scenarios</h3>
+                        <p className="mt-2 text-gray-500">Configure your parameters and click "Run All Scenarios".</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'detail' && (
+                  <div className="space-y-6">
+                    {results.detail.length > 0 ? (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <h2 className="text-2xl font-bold text-gray-900">Detailed Channel Performance</h2>
+                          <button
+                            onClick={() => exportToCSV(results.detail, 'sears_channel_analysis.csv')}
+                            className="inline-flex items-center px-4 py-2 border text-sm font-medium rounded-lg hover:bg-gray-50"
+                          >
+                            <DownloadIcon />
+                            <span className="ml-2">Export Full Analysis</span>
+                          </button>
+                        </div>
+                        
+                        <div className="bg-white rounded-xl shadow-xl overflow-hidden">
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="scenario-header">
+                                <tr>
+                                  <th className="px-6 py-3 text-left text-xs font-bold uppercase">Scenario</th>
+                                  <th className="px-6 py-3 text-left text-xs font-bold uppercase">Market</th>
+                                  <th className="px-6 py-3 text-left text-xs font-bold uppercase">Channel</th>
+                                  <th className="px-6 py-3 text-left text-xs font-bold uppercase">Investment</th>
+                                  <th className="px-6 py-3 text-left text-xs font-bold uppercase">Leads</th>
+                                  <th className="px-6 py-3 text-left text-xs font-bold uppercase">Bookings</th>
+                                  <th className="px-6 py-3 text-left text-xs font-bold uppercase">Repairs</th>
+                                  <th className="px-6 py-3 text-left text-xs font-bold uppercase">Profit</th>
+                                  <th className="px-6 py-3 text-left text-xs font-bold uppercase">ROI</th>
+                                  <th className="px-6 py-3 text-left text-xs font-bold uppercase">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {results.detail.slice(0, 50).map((row, index) => (
+                                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <div className="flex items-center space-x-2">
+                                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                          row.Sens === 'High' ? 'bg-green-100 text-green-800' :
+                                          row.Sens === 'Base' ? 'bg-blue-100 text-blue-800' :
+                                          'bg-yellow-100 text-yellow-800'
+                                        }`}>
+                                          {row.Sens}
+                                        </span>
+                                        <span className="text-xs text-gray-500">{row.Mix.replace('_', ' ')}</span>
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-medium">{row.DMA}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className={`channel-badge ${getChannelBadgeClass(row.Channel)}`}>
+                                        {row.Channel}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-bold">{formatCurrency(row.Spend)}</td>
+                                    <td className="px-6 py-4 text-sm">
+                                      <div>{formatNumber(row.Leads, 1)}</div>
+                                      <div className="text-xs text-gray-500">${formatNumber(row.LeadCost, 0)} each</div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm">
+                                      <div>{formatNumber(row.Creates, 1)}</div>
+                                      <div className="text-xs text-gray-500">{formatPercent(row.ConversionRate)} rate</div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm">
+                                      <div>{formatNumber(row.Repairs, 1)}</div>
+                                      <div className="text-xs text-gray-500">{formatNumber(row.JobsPerDay, 1)}/day</div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-bold text-green-600">{formatCurrency(row.Profit)}</td>
+                                    <td className="px-6 py-4 text-sm">
+                                      <span className={getROIClass(row.ROI)}>{formatPercent(row.ROI)}</span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <div className="flex flex-col space-y-1">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                          row.CapFlag ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                        }`}>
+                                          {row.CapFlag ? 'Over Cap' : 'OK'}
+                                        </span>
+                                        {row.LanguageTarget !== 'General' && (
+                                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                            row.LanguageTarget === 'Spanish' ? 'spanish-indicator' : 'english-indicator'
+                                          }`}>
+                                            {row.LanguageTarget}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          {results.detail.length > 50 && (
+                            <div className="px-6 py-4 bg-gray-50 border-t">
+                              <p className="text-sm text-gray-500">
+                                Showing first 50 rows of {results.detail.length} total results. Export for complete data.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-16 bg-white rounded-xl shadow-lg">
+                        <TableIcon />
+                        <h3 className="mt-4 text-xl font-medium text-gray-900">No Channel Data Available</h3>
+                        <p className="mt-2 text-gray-500">Run scenario calculations to see detailed channel performance.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'comparison' && (
+                  <div className="space-y-6">
+                    {results.pivot.length > 0 ? (
+                      <div className="bg-white rounded-lg shadow-sm p-6">
+                        <h2 className="text-xl font-semibold mb-4">Strategy Comparison</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          {Object.keys(mediaMix).map(mix => {
+                            const mixResults = results.pivot.filter(r => r.Mix === mix && r.Sens === 'Base');
+                            const totalProfit = mixResults.reduce((sum, r) => sum + r.Profit, 0);
+                            const totalSpend = mixResults.reduce((sum, r) => sum + r.Spend, 0);
+                            return (
+                              <div key={mix} className="text-center p-4 bg-blue-50 rounded-lg">
+                                <h3 className="font-bold text-gray-900">{mix.replace('_', ' ')}</h3>
+                                <div className="mt-2">
+                                  <div className="text-2xl font-bold text-green-600">{formatCurrency(totalProfit)}</div>
+                                  <div className="text-sm text-gray-500">{formatPercent(totalProfit/totalSpend)} ROI</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                        <h3 className="text-lg font-medium text-gray-900">No Comparison Data</h3>
+                        <p className="text-gray-500">Run scenarios to compare strategies.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(React.createElement(ScenariosPlanner), document.getElementById('root'));
+    </script>
+</body>
+</html>
