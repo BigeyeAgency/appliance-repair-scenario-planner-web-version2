@@ -522,17 +522,23 @@
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                       {(() => {
                         // Fixed: Use React.useMemo to prevent duplicate calculations
-const totals = (() => {
+// Prevent duplicate calculations with a simple cache
+const cacheKey = results.pivot.map(r => `${r.DMA}-${r.Mix}-${r.Sens}-${r.Spend}`).join('|');
+if (!window.totalsCache || window.totalsCache.key !== cacheKey) {
   const baseRows = results.pivot.filter(row => row.Sens === 'Base');
-  console.log('Base rows count:', baseRows.length);
+  console.log('Calculating totals - Base rows count:', baseRows.length);
   
-  return baseRows.reduce((acc, row) => {
-    console.log('Adding:', row.DMA, row.Mix, '$' + row.Spend);
+  const newTotals = baseRows.reduce((acc, row) => {
     acc.spend += row.Spend; acc.profit += row.Profit;
     acc.repairs += row.Repairs; acc.leads += row.Leads;
     return acc;
   }, { spend: 0, profit: 0, repairs: 0, leads: 0 });
-})();
+  
+  window.totalsCache = { key: cacheKey, totals: newTotals };
+  console.log('Cached new totals:', newTotals.spend);
+}
+
+const totals = window.totalsCache.totals;
 console.log('Final totals spend:', totals.spend);
                             
                             return [
