@@ -521,20 +521,20 @@
                       <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                       {(() => {
-  // Debug: Check what's in pivot data
-  console.log('All pivot data:', results.pivot);
-  console.log('Base scenarios only:', results.pivot.filter(row => row.Sens === 'Base'));
-  
-  const totals = results.pivot.reduce((acc, row) => {
-    if (row.Sens === 'Base') {
-      console.log('Adding Base row:', row.DMA, row.Mix, row.Spend);
-      acc.spend += row.Spend; acc.profit += row.Profit;
-      acc.repairs += row.Repairs; acc.leads += row.Leads;
-    }
-    return acc;
-  }, { spend: 0, profit: 0, repairs: 0, leads: 0 });
-  
-  console.log('Final totals:', totals);    
+                        // Debug: Let's see what's happening
+console.log('Total pivot rows:', results.pivot.length);
+console.log('Base scenario rows:', results.pivot.filter(row => row.Sens === 'Base').length);
+
+const totals = results.pivot.reduce((acc, row) => {
+  if (row.Sens === 'Base') {
+    console.log('Adding Base row:', row.DMA, row.Mix, '$' + row.Spend);
+    acc.spend += row.Spend; acc.profit += row.Profit;
+    acc.repairs += row.Repairs; acc.leads += row.Leads;
+  }
+  return acc;
+}, { spend: 0, profit: 0, repairs: 0, leads: 0 });
+
+console.log('Final totals spend:', totals.spend);
                             
                             return [
                               { label: 'Total Investment', value: formatCurrency(totals.spend), subtext: 'Base scenario', color: 'blue' },
