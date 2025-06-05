@@ -522,17 +522,17 @@
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                       {(() => {
                         // Fixed: Use React.useMemo to prevent duplicate calculations
-const totals = React.useMemo(() => {
-  console.log('Calculating totals - should only run once per data change');
-  return results.pivot.reduce((acc, row) => {
-    if (row.Sens === 'Base') {
-      acc.spend += row.Spend; acc.profit += row.Profit;
-      acc.repairs += row.Repairs; acc.leads += row.Leads;
-    }
+const totals = (() => {
+  const baseRows = results.pivot.filter(row => row.Sens === 'Base');
+  console.log('Base rows count:', baseRows.length);
+  
+  return baseRows.reduce((acc, row) => {
+    console.log('Adding:', row.DMA, row.Mix, '$' + row.Spend);
+    acc.spend += row.Spend; acc.profit += row.Profit;
+    acc.repairs += row.Repairs; acc.leads += row.Leads;
     return acc;
   }, { spend: 0, profit: 0, repairs: 0, leads: 0 });
-}, [results.pivot]);
-
+})();
 console.log('Final totals spend:', totals.spend);
                             
                             return [
