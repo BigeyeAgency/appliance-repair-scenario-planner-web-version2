@@ -536,11 +536,11 @@ const totals = (() => {
 console.log('Final totals spend:', totals.spend);
                             
                             return [
-                              { label: 'Total Investment', value: formatCurrency(totals.spend), subtext: 'Base scenario', color: 'blue' },
-                              { label: 'Projected Profit', value: formatCurrency(totals.profit), subtext: `${formatPercent(totals.profit/totals.spend)} ROI`, color: 'green' },
-                              { label: 'Service Repairs', value: formatNumber(totals.repairs, 0), subtext: `${formatNumber(totals.repairs/90, 1)} per day`, color: 'purple' },
-                              { label: 'Generated Leads', value: formatNumber(totals.leads, 0), subtext: `${formatNumber(totals.spend/totals.leads, 0)} CPL`, color: 'indigo' }
-                            ].map((metric, index) => (
+  { label: 'Total Investment', value: formatCurrency(Math.round(totals.spend / 3)), subtext: 'Base scenario' },
+  { label: 'Projected Profit', value: formatCurrency(Math.round(totals.profit / 3)), subtext: `${((totals.profit / 3) / (totals.spend / 3) * 100).toFixed(1)}% ROI` },
+  { label: 'Service Repairs', value: Math.round(totals.repairs / 3).toLocaleString(), subtext: `${(totals.repairs / 3 / 365).toFixed(1)} per day` },
+  { label: 'Generated Leads', value: Math.round(totals.leads / 3).toLocaleString(), subtext: `$${Math.round((totals.spend / 3) / (totals.leads / 3))} CPL` }
+];
                               <div key={index} className="metric-card rounded-xl p-6 border-l-4 border-blue-500 card-hover">
                                 <div className="flex items-center justify-between">
                                   <div>
